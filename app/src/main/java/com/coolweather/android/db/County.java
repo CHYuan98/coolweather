@@ -10,7 +10,7 @@ public class County  extends LitePalSupport {
     private String countyName;
 
     //记录县的天气id
-    private int weatherId;
+    private String weatherId;
 
     //记录当前县所属市的代号
     private int cityId;
@@ -31,11 +31,11 @@ public class County  extends LitePalSupport {
         this.countyName = countyName;
     }
 
-    public int getWeatherId() {
+    public String getWeatherId() {
         return weatherId;
     }
 
-    public void setWeatherId(int weatherId) {
+    public void setWeatherId(String weatherId) {
         this.weatherId = weatherId;
     }
 
