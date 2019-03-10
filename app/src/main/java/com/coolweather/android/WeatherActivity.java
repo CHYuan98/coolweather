@@ -272,12 +272,14 @@ public class WeatherActivity extends AppCompatActivity {
                 w_amount.setText(base.getPcpn());
                 w_rate.setText(base.getPop()+"%");
             }
+            suggLayout.removeAllViews();
             List<LifestyleBase> lifestyleList = weather.getLifestyle();
             int i=0;
             for (LifestyleBase base : lifestyleList){
                 View view = LayoutInflater.from(WeatherActivity.this).inflate(R.layout.sugg_item,
                         suggLayout,false);
                 TextView suggText = (TextView) view.findViewById(R.id.suggText);
+                LogUtil.d("2",base.getTxt());
                 switch (i){
                     case 0:
                         suggText.setText("舒适度指数: " + base.getTxt());
@@ -296,6 +298,8 @@ public class WeatherActivity extends AppCompatActivity {
                         break;
                     case 5:
                         suggText.setText("紫外线指数: " + base.getTxt());
+                        break;
+                    default:
                         break;
                 }
                 i++;
