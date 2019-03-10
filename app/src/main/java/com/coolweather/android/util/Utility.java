@@ -5,12 +5,17 @@ import android.text.TextUtils;
 import com.coolweather.android.db.City;
 import com.coolweather.android.db.County;
 import com.coolweather.android.db.Province;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Utility {
+
+    private static final String MY_KY_ID = "HE1903072043171986";
+
+    private static final String MY_KEY = "86fe7c88443b433a9c7ea85ced849411";
 
     /*
     * 解析和处理服务器返回的省级数据
@@ -49,6 +54,7 @@ public class Utility {
                     city.setProvinceId(provinceId);
                     city.save();
                 }
+                return true;
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -70,10 +76,12 @@ public class Utility {
                     county.setCityId(cityId);
                     county.save();
                 }
+                return true;
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
         return false;
     }
+
 }
