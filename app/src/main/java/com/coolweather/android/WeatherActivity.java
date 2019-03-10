@@ -1,15 +1,20 @@
 package com.coolweather.android;
 
+import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -75,6 +80,17 @@ public class WeatherActivity extends AppCompatActivity {
 
     private ImageView bingPicImg;
 
+    public SwipeRefreshLayout swipeRefresh;
+
+    private String mWeatherId;
+
+    private Button navButton;
+
+    public DrawerLayout drawerLayout;
+
+    private String weatherId;
+
+    @SuppressLint("ResourceAsColor")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,10 +100,10 @@ public class WeatherActivity extends AppCompatActivity {
                     View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
-
         setContentView(R.layout.activity_weather);
         HeConfig.init(MY_KY_ID, MY_KEY);
         HeConfig.switchToFreeServerNode();
+
         weatherLayout = (ScrollView) findViewById(R.id.weather_layout);
         titleCity = (TextView) findViewById(R.id.title_city);
         titleUpdateTime = (TextView) findViewById(R.id.title_updata_time);
@@ -98,9 +114,13 @@ public class WeatherActivity extends AppCompatActivity {
         w_amount = (TextView) findViewById(R.id.w_amount);
         w_rate = (TextView) findViewById(R.id.w_rate);
         bingPicImg = (ImageView) findViewById(R.id.bing_pic_img);
+        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        navButton = (Button) findViewById(R.id.nav_button);
 
+        swipeRefresh.setColorSchemeColors(R.color.colorPrimary);
         SharedPreferences preferences =PreferenceManager.getDefaultSharedPreferences(this);
-        String weatherId =getIntent().getStringExtra("weather_id");
+       weatherId =getIntent().getStringExtra("weather_id");
         String bingPic = preferences.getString("bing",null);
         if(bingPic != null){
             Glide.with(this).load(bingPic).into(bingPicImg);
@@ -108,11 +128,33 @@ public class WeatherActivity extends AppCompatActivity {
             loadBingPic();
         }
         String strCity = preferences.getString("weather_city",null);
+
         if (weatherList==null){
-            requestWeather(strCity==null?weatherId:strCity);
+            requestWeather(weatherId==null?strCity:weatherId);
         }else{
             showProgressDialog();
         }
+
+
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                if(mWeatherId==null){
+                    mWeatherId = preferences.getString("weather_city",null);
+                    requestWeather(mWeatherId);
+                }else{
+                    requestWeather(mWeatherId);
+                }
+
+            }
+        });
+
+        navButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
     }
 
     /*
@@ -147,19 +189,18 @@ public class WeatherActivity extends AppCompatActivity {
     /*
     * 根据天气id请求城市天气信息
     * */
-    public void requestWeather(String weatherId){
+    public void requestWeather(String weatherID){
         showProgressDialog();
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(
                 WeatherActivity.this).edit();
-        editor.putString("weather_city",weatherId);
-        editor.apply();
-        HeWeather.getWeather(WeatherActivity.this, weatherId, Lang.CHINESE_SIMPLIFIED,
+        HeWeather.getWeather(WeatherActivity.this, weatherID, Lang.CHINESE_SIMPLIFIED,
                 Unit.METRIC, new HeWeather.OnResultWeatherDataListBeansListener() {
                     @Override
                     public void onError(Throwable throwable) {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                LogUtil.d("2", String.valueOf(throwable));
                                 Toast.makeText(WeatherActivity.this,"获取天气信息失败抛出异常"+
                                         throwable,Toast.LENGTH_LONG).show();
                             }
@@ -169,7 +210,16 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(List<Weather> list) {
                         weatherList = list;
-                        showWeatherInfo(list);
+                        String string = null;
+                        for(Weather weather : list) {
+                            /*editor.putString("weather_city", weather.getBasic().getCid());*/
+                            string = weather.getBasic().getCid();
+                        }
+                        mWeatherId = string;
+                        editor.putString("weather_city",string);
+                        editor.apply();
+                        showWeatherInfo(weatherList);
+                        swipeRefresh.setRefreshing(false);
                         closeProgressDialog();
                     }
                 });
@@ -182,9 +232,6 @@ public class WeatherActivity extends AppCompatActivity {
     * */
     private void showWeatherInfo(List<Weather> list){
         showProgressDialog();
-        if (list.size() >0 ){
-
-        }
         for (Weather weather : list){
             //获取城市名
             String cityName = weather.getBasic().getLocation();
